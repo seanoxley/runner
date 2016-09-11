@@ -1,0 +1,173 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<title>runner</title>
+	<!--
+	* The "meta viewport" tag (below) helps your app size appropriately to a device's screen.
+	* Note that the meta viewport approach is being phased out in favor of the @viewport CSS rule.
+	* For a quick overview of both, see this article:
+	*   http://webdesign.tutsplus.com/tutorials/htmlcss-tutorials/quick-tip-dont-forget-the-viewport-meta-tag
+	* To see what happens, try the app on a real device with and without a "meta viewport" tag.
+	-->
+
+	<!-- <meta name="viewport" content="width=device-width, initial-scale=1"> -->
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+	<!-- <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes, minimum-scale=1, maximum-scale=2"> -->
+	
+	<style>
+	/* following three (cascaded) are equivalent to above three meta viewport statements */
+	/* see http://www.quirksmode.org/blog/archives/2014/05/html5_dev_conf.html */
+	/* see http://dev.w3.org/csswg/css-device-adapt/ */
+		@-ms-viewport { width: 100vw ; zoom: 100% ; }                           @viewport { width: 100vw ; zoom: 100% ; }
+		@-ms-viewport { user-zoom: fixed ; }                                    @viewport { user-zoom: fixed ; }
+		/*@-ms-viewport { user-zoom: zoom ; min-zoom: 100% ; max-zoom: 200% ; }   @viewport { user-zoom: zoom ; min-zoom: 100% ; max-zoom: 200% ; }*/
+
+/*	#grad {
+		background: linear-gradient(180deg, #4599b1, #f6f1b2);
+		background-size: 400% 400%;
+
+		-webkit-animation: AnimationName 4s ease infinite;
+		-moz-animation: AnimationName 4s ease infinite;
+		-o-animation: AnimationName 4s ease infinite;
+		animation: AnimationName 4s ease infinite;
+
+		@-webkit-keyframes AnimationName {
+		    0%{background-position:50% 0%}
+		    50%{background-position:50% 100%}
+		    100%{background-position:50% 0%}
+		}
+		@-moz-keyframes AnimationName {
+		    0%{background-position:50% 0%}
+		    50%{background-position:50% 100%}
+		    100%{background-position:50% 0%}
+		}
+		@-o-keyframes AnimationName {
+		    0%{background-position:50% 0%}
+		    50%{background-position:50% 100%}
+		    100%{background-position:50% 0%}
+		}
+		@keyframes AnimationName { 
+		    0%{background-position:50% 0%}
+		    50%{background-position:50% 100%}
+		    100%{background-position:50% 0%}
+		}
+	}*/
+
+	</style>
+	<!-- // <script src="cordova.js"></script> -->
+
+	<!-- Additional Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>
+	<script src="/www/lib/TweenMax.min.js"></script>
+	<script src="/www/lib/howler.min.js"></script>
+
+	<!-- Load config data -->
+	<script src="/www/config.js"></script>
+
+	<!-- Load Pixi.js Engine -->
+	<script src="/www/lib/pixi.js"></script>
+
+	<!-- Utility Functions -->
+	<script src="/www/src/utils/resize.js"></script>
+	<script src="/www/src/utils/utils.js"></script>
+	<script src="/www/src/utils/stopwatch.js"></script>
+	<script src="/www/src/utils/newObjectHelpers.js"></script>	
+	<!-- Classes -->
+	<script src="/www/src/classes/Engine.js"></script>
+	<script src="/www/src/classes/SoundManager.js"></script>
+	<script src="/www/src/classes/GridMap.js"></script>
+	<script src="/www/src/classes/Doodad.js"></script>
+	<script src="/www/src/classes/Triangle.js"></script>
+	<script src="/www/src/classes/Button.js"></script>
+	<script src="/www/src/classes/TopUIBar.js"></script>
+	<script src="/www/src/classes/ButtonPadButton.js"></script>
+	<script src="/www/src/classes/PatternDisplayTile.js"></script>
+	<script src="/www/src/classes/SceneManager.js"></script>
+	<script src="/www/src/classes/PatternDisplay.js"></script>
+	<script src="/www/src/classes/ButtonPad.js"></script>
+	<script src="/www/src/classes/DataHandler.js"></script>
+	<script src="/www/src/classes/LevelHandler.js"></script>
+	<script src="/www/src/classes/LevelCreator.js"></script>
+	<script src="/www/src/classes/Timer.js"></script>
+	<script src="/www/src/classes/Player.js"></script>
+	<script src="/www/src/classes/ParallaxTerrain.js"></script>
+	<!-- Scenes -->
+	<script src="/www/src/scenes/BlankScene.js"></script>
+	<script src="/www/src/scenes/BootScene.js"></script>
+	<script src="/www/src/scenes/MainMenuScene.js"></script>
+	<script src="/www/src/scenes/OptionsScene.js"></script>
+	<script src="/www/src/scenes/GameplayScene.js"></script>
+	<script src="/www/src/scenes/GameOverScene.js"></script>
+	<script src="/www/src/scenes/TestScene.js"></script>
+
+	<script>
+
+var colors = new Array(
+  [69,153,177],
+  [81,80,98],
+  [246,241,178],
+  [57,86,68]);
+
+var step = 0;
+//color table indices for: 
+// current color top
+// next color top
+// current color bottom
+// next color bottom
+var colorIndices = [0,1,2,3];
+
+//transition speed
+var gradientSpeed = 0.008;
+
+function updateGradient()
+{
+  
+  if ( $===undefined ) return;
+  
+var c0_0 = colors[colorIndices[0]];
+var c0_1 = colors[colorIndices[1]];
+var c1_0 = colors[colorIndices[2]];
+var c1_1 = colors[colorIndices[3]];
+
+var istep = 1 - step;
+var r1 = Math.round(istep * c0_0[0] + step * c0_1[0]);
+var g1 = Math.round(istep * c0_0[1] + step * c0_1[1]);
+var b1 = Math.round(istep * c0_0[2] + step * c0_1[2]);
+var color1 = "rgb("+r1+","+g1+","+b1+")";
+
+var r2 = Math.round(istep * c1_0[0] + step * c1_1[0]);
+var g2 = Math.round(istep * c1_0[1] + step * c1_1[1]);
+var b2 = Math.round(istep * c1_0[2] + step * c1_1[2]);
+var color2 = "rgb("+r2+","+g2+","+b2+")";
+
+ $('#grad').css({
+   background: "-webkit-linear-gradient(" + color1 + "," + color2 + ")"})
+  
+  step += gradientSpeed;
+  if ( step >= 1 )
+  {
+    step %= 1;
+    colorIndices[0] = colorIndices[1];
+    colorIndices[2] = colorIndices[3];
+    
+    //pick two new target color indices
+    //do not pick the same as the current one
+    colorIndices[1] = ( colorIndices[1] + Math.floor( 1 + Math.random() * (colors.length - 1))) % colors.length;
+    colorIndices[3] = ( colorIndices[3] + Math.floor( 1 + Math.random() * (colors.length - 1))) % colors.length;
+    
+  }
+}
+
+setInterval(updateGradient,100);
+
+	</script>
+
+
+</head>
+<body style="padding:0; margin: 0; overflow:hidden; background-color:#000000";>
+	<div id="grad">
+	<!-- Main game -->
+	<script src="/www/src/game.js"></script>
+	</div>
+</body>
+</html>
