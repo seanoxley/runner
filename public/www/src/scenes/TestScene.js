@@ -74,9 +74,30 @@
 			window.player = foo;
 
 
+			window.test = createTestSquare()
+
+			test.x = Game.width / 2
+			test.y = Game.height / 2
+
+			this.container.addChild( test )
+			
+			function createTestSquare() {
+
+
+				var graphics = new PIXI.Graphics();
+				graphics.beginFill(0x00FF00);
+				graphics.drawRect( 0, 0, 100, 100);
+				graphics.endFill()
+
+				var img = new PIXI.Sprite(graphics.generateCanvasTexture());
+				img.anchor.set( 0.5 )
+
+				return img
+			}
+
 
 			function createGround( parent ) {
-				var ground = new PIXI.Sprite( Game.GameHandler.Loader.resources["128_ground"].texture );
+				var ground = new PIXI.Sprite( Game.GameHandler.Loader.resources[ "128_ground" ].texture );
 				ground.x = 0;
 				ground.y = refY( 592 );
 				ground.scale.set( Game.scaler );
@@ -200,8 +221,14 @@ this.tick = 0;
 		},
 
 		update : function() {
-		   this.bg.tilePosition.x -= 1;
+			this.bg.tilePosition.x -= 1;
 
+			// test.rotation -= 0.02;
+			test.skew.x += 0.005;
+			test.skew.y += 0.01;
+ 			test.scale.x = 0.90 + Math.cos(this.tick * 0.5) * 0.10;
+ 			test.scale.y = 0.90 + Math.sin(this.tick * 0.5) * 0.10;
+ 			test.alpha = 0.5 + Math.cos(this.tick * 0.2) * 0.25;
 
 			bg1.update();
 			bg2.update();
