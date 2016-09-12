@@ -7,30 +7,69 @@ function ParallaxTerrain( params ) {
 
 	// param object properties with defaults
 	this.name = params.name || "terrain";
-	this.color = params.color || "0x000000";
+	this.baseColor = params.baseColor || "0x000000";
 	this.baseHeight = params.baseHeight || 0;
 	this.sectionsPerPeak = params.sectionsPerPeak || 2;
 	this.peakVariance = params.peakVariance || 32;
 	this.peakErratic = params.peakErratic || 1;
 
+	// defaults/calculated properties
 	this.minPeak = 1;
 	this.maxPeak = this.peakVariance * this.peakErratic;
 	this.bottomAnchor = refY( 592 );
 	this.groundAssetSize = 128;
 	this.sectionSize = parseInt( this.groundAssetSize * this.sectionsPerPeak * Game.scaler );
 	this.sectionsNeeded = Math.ceil( Game.width / this.sectionSize ) + 2;
-	this.sectionsCreated = 0;
-	this.x = -this.sectionSize;
-	this.y = 0;
 
+	// properties are set in the reset function
+	this.color = null;
+	this.running = null;
+	this.speed = null;
+	this.offSet = null;
+	this.sectionsCreated = null;
+	this.x = null;
+	this.y = null;
+
+	// run it
 	this.init();
 }
 
 ParallaxTerrain.prototype.init = function() {
-	// this.create();
-
+	this.reset();
 	this.createArray();
+	return this;
+}
 
+ParallaxTerrain.prototype.start = function() {
+	if ( !this.running ) {
+		this.running = true;
+		console.log( "ParallaxTerrain:", this.name, this.running );
+	}
+	return this.running;
+}
+
+ParallaxTerrain.prototype.stop = function() {
+	if ( this.running ) {
+		this.running = false;
+		console.log( "ParallaxTerrain:", this.name, this.running );
+	}
+	return this.running;
+}
+
+ParallaxTerrain.prototype.setSpeed = function( speed ) {
+	if ( speed ) {
+		if ( speed === 0 ) {
+			this.stop();
+		}
+		this.speed = -speed;
+	}
+	return this;
+}
+
+ParallaxTerrain.prototype.setColor = function( color ) {
+	if ( color ) {
+		this.color = color;
+	}
 	return this;
 }
 
@@ -47,12 +86,11 @@ ParallaxTerrain.prototype.createArray = function() {
 	if ( !this.terrainArray ) {
 		this.terrainArray = new PIXI.Container();
 		this.addChild( this.terrainArray );
+
+		for ( var i = 0; i < this.sectionsNeeded; i++ ) {
+			this.addPiece();
+		}
  	}
-
-	for ( var i = 0; i < this.sectionsNeeded; i++ ) {
-		this.addPiece();
-	}
-
 }
 
 ParallaxTerrain.prototype.getLastAnchor = function() {
@@ -71,6 +109,15 @@ ParallaxTerrain.prototype.getFirstAnchor = function() {
 	return 0;
 }
 
+ParallaxTerrain.prototype.reset = function() {
+	this.color = this.baseColor;
+	this.speed = 0;
+	this.running = false;
+	this.offSet = 0;
+	this.sectionsCreated = 0;
+	this.x = -this.sectionSize;
+	this.y = 0;
+}
 
 ParallaxTerrain.prototype.addPiece = function() {
 	this.terrainArray.addChild( this.createPiece() );
@@ -105,14 +152,14 @@ ParallaxTerrain.prototype.createPiece = function() {
 	graphics.bottomAnchor = this.bottomAnchor;
 	graphics.leftAnchor = this.getLastAnchor();
 	graphics.rightAnchor = graphics.leftAnchor + this.sectionSize;
-	graphics.topLeft;
-	graphics.topRight;
+	graphics.topLeft = height - refY( this.topLeft );
+	graphics.topRight = height - refY( topRight );
 
 	// draw a shape
 	graphics.moveTo( graphics.leftAnchor, graphics.bottomAnchor ); // bottom left start
 	graphics.lineTo( graphics.leftAnchor, graphics.bottomAnchor ); // bottom left
-	graphics.lineTo( graphics.leftAnchor, height - refY( this.topLeft )); // top left
-	graphics.lineTo( graphics.rightAnchor, height - refY( topRight )); // top right
+	graphics.lineTo( graphics.leftAnchor, graphics.topLeft ); // top left
+	graphics.lineTo( graphics.rightAnchor, graphics.topRight ); // top right
 	graphics.lineTo( graphics.rightAnchor, graphics.bottomAnchor ); // bottom right
 	graphics.endFill();
 
@@ -133,13 +180,13 @@ ParallaxTerrain.prototype.deletePiece = function() {
 }
 
 ParallaxTerrain.prototype.update = function() {
+	if ( this.running ) {
+		this.moveX( this.speed );
+	}
+
 	if ( this.getOffset() >= this.sectionSize ) {
 		this.deletePiece();
 		this.addPiece();
-
 		this.x = -this.getFirstAnchor(); // ensure the container is aligned with pieces
 	}
-
-
 }
-

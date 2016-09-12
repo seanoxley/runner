@@ -31,7 +31,7 @@
 
 			var bg1Data = {
 				name : "front",
-				color : "0x3E2723",
+				baseColor : "0x3E2723",
 				baseHeight : 32,
 				peakVariance : 32,
 				peakErratic : 3,
@@ -40,7 +40,7 @@
 
 			var bg2Data = {
 				name : "mid",
-				color : "0x5D4037",
+				baseColor : "0x5D4037",
 				baseHeight : 92,
 				peakVariance : 64,
 				peakErratic : 3,
@@ -49,20 +49,23 @@
 
 			var bg3Data = {
 				name : "back",
-				color : "0x795548",
+				baseColor : "0x795548",
 				baseHeight : 160,
 				peakVariance : 92,
 				peakErratic : 2,
 				sectionsPerPeak : 3
 			};	
 
-			window.bg3 = new ParallaxTerrain( bg3Data )
+			window.bg3 = new ParallaxTerrain( bg3Data );
+			bg3.setSpeed( 1 ).start();
 			this.container.addChild( bg3 );
 
-			window.bg2 = new ParallaxTerrain( bg2Data )
+			window.bg2 = new ParallaxTerrain( bg2Data );
+			bg2.setSpeed( 2.5 ).start();
 			this.container.addChild( bg2 );
 
-			window.bg1 = new ParallaxTerrain( bg1Data )
+			window.bg1 = new ParallaxTerrain( bg1Data );
+			bg1.setSpeed( 5 ).start();
 			this.container.addChild( bg1 );
 
 			var foo = new Player();
@@ -199,13 +202,9 @@ this.tick = 0;
 		update : function() {
 		   this.bg.tilePosition.x -= 1;
 
-			bg1.moveX( -5 );
+
 			bg1.update();
-
-			bg2.moveX( -2.5 );
 			bg2.update();
-
-			bg3.moveX( -0.5 );
 			bg3.update();
 
 	// iterate through the sprites and update their position
