@@ -109,7 +109,8 @@
 				.add( "test", "new_runner_art/run_cycle/test.png" )
 				.add( "paper_512", "new_runner_art/paper_512.png" )
 				.add( "ground", "new_runner_art/ground.png" )
-				.add( "128_ground", "new_runner_art/128_ground.png" )
+				.add( "128_ground", "new_runner_art/128_ground.png" ) 
+				.add( "paper_flake_32", "new_runner_art/paper_flake_32.png" ) 
 
 				.add( "clouds1", "new_runner_art/clouds1.png" )
 				.add( "clouds2", "new_runner_art/clouds2.png" )

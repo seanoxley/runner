@@ -12,18 +12,19 @@ function Player() {
 	this.init();
 }
 
-Player.prototype.changeMovement = function( newMovement ) {
+Player.prototype.setMovement = function( newMovement ) {
 	if ( this.movementList.indexOf( newMovement ) !== -1 ) {
 		var movementID = this.movementList.indexOf( newMovement );
 		var currentMovement = this.getMovement();
 
 		if ( newMovement !== currentMovement ) {
-			// console.log( movementID );
+			console.log( "MOVEMENT CHANGE:", this.getMovement(), "->", this.movementList[ movementID ] );
 			return this.movement = movementID;
 		}
 	}
 
 	if ( newMovement >= 0 && newMovement < this.movementList.length && newMovement !== this.movement ) {
+		console.log( "MOVEMENT CHANGE:", this.getMovement(), "->", this.movementList[ movementID ] );
 		return this.movement = newMovement;
 	}
 	return false;
@@ -68,6 +69,13 @@ Player.prototype.create = function() {
 
 /////////////////////////////////////////////////////////////////////////////////
 
+	this.playerAsset = new PIXI.Container();
+	this.addChild( this.playerAsset );
+
+	var playerScale = 5 * Game.scaler;
+
+
+
 	// create an array of textures from an image path
 	var frames = [];
 
@@ -75,38 +83,31 @@ Player.prototype.create = function() {
 	    var val = i < 10 ? '0' + i : i;
 
 	    // magically works since the spritesheet was loaded with the pixi loader
-	    frames.push( PIXI.Texture.fromFrame( 'frame_00' + val + ".png" ));
+	    frames.push( PIXI.Texture.fromFrame( "frame_00" + val + ".png" ));
 	}
 
+	var runAnimation = new PIXI.extras.MovieClip( frames );
+	runAnimation.anchor.set(0.5);
+	runAnimation.scale.set( playerScale ) ;
+	runAnimation.animationSpeed = 0.13;
+	runAnimation.visible = false;
 
-	// create a MovieClip (brings back memories from the days of Flash, right ?)
-	movie = new PIXI.extras.MovieClip( frames );
-
-	/*
-	 * A MovieClip inherits all the properties of a PIXI sprite
-	 * so you can change its position, its anchor, mask it, etc
-	 */
-
-	var playerScale = 5 * Game.scaler;
-
-	movie.position.set( 300 );
-
-	movie.anchor.set(0.5);
-	movie.scale.set( playerScale )  
-	movie.animationSpeed = 0.13;
-
-	movie.play();
-
-	// this.addChild(movie);
-	// this.megaman = movie;
+	var frames = [];
+	frames.push( PIXI.Texture.fromFrame( "frame_0001.png" ));
+	var idleAnimation = new PIXI.extras.MovieClip( frames );
+	idleAnimation.anchor.set(0.5);
+	idleAnimation.scale.set( playerScale ) ;
+	idleAnimation.animationSpeed = 0.13;
+	idleAnimation.visible = false;
 
 
-	window.man = movie
+window.man = this;
 
-	this.playerAsset = movie;
-	this.hide();
+	this.playerAsset.addChild( runAnimation );
+	this.playerAsset.addChild( idleAnimation );
+	// this.hide();
 
-	this.addChild( this.playerAsset );
+
 
 
 }
@@ -162,22 +163,26 @@ Player.prototype.init = function() {
 	this.addListeners();
 }
 
-// Player.prototype.jump = function() {
-// 	console.log( "JUMP" );
+Player.prototype.idle = function() {
+	this.setMovement( "idle" );
+	this.playerAsset.idleAnimation.visible = true;
+	this.playerAsset.idleAnimation.play();
+}
 
-// 	this.playerAsset.y -= this.jumpHeight;
-// }
+Player.prototype.run = function() {
+	this.setMovement( "jumping" );
+}
 
 Player.prototype.jump = function( power ) {
 	var that = this;
-
-
 
 	var minJump = 100;
 	var maxJump = 400;
 
 	var minDuration = 0.25;
 	var maxDuration = 0.4;
+
+	maxDuration = 4;
 
 	var duration = ( power * ( maxDuration - minDuration )) + minDuration;
 	var jumpHeight = ( power * ( maxJump - minJump )) + minJump;
@@ -186,7 +191,7 @@ Player.prototype.jump = function( power ) {
 
 	var obj = { y : 0 }
 
-	var tween = TweenMax.to( 
+	this.jumpTween = TweenMax.to( 
 		obj, //target
 		duration, // duration in seconds
 			{ 	y : jumpHeight,
@@ -198,14 +203,17 @@ Player.prototype.jump = function( power ) {
 				onUpdate : function() {
 					var newY = refY( that.defaultPosition.y - obj.y );
 					that.playerAsset.y = newY;
+					if ( this.totalProgress() >= 0.5 ) {
+						that.setMovement( "falling" );
+					}
 				},
 				onComplete : function() {
 					// console.log( "END TWEEN" );
 					that.resetPosition();
-					that.changeMovement( "idle" );
+					that.setMovement( "idle" );
 					that.charging = false;
 					// that.buttonHit = false;
-
+					this.kill(); // cleanup tween
 				}
 			}
 		)
@@ -228,30 +236,16 @@ Player.prototype.addListeners = function() {
 			that.currentJumpTime = Date.now();
 			var timeDiff = that.currentJumpTime - that.startJumpTime;
 
-
-
-			// if ( !that.buttonHit ) {
-			// 	console.log( "held" );
-
-			// 			that.buttonHit = true;
-
-
-
-			// }
-
-
-
+			// down charge
 			if ( down && !that.charging && that.getMovement() === "idle" ) {
 				console.log( "START CHARGE" );
 
 				that.chargeTime = Date.now();
 
 				that.charging = true;
-
-
-
 			}
 
+			// first jump
 			if ( !down && that.getMovement() === "idle" && that.charging ) {
 
 				var chargeTime =  Date.now() - that.chargeTime;
@@ -263,11 +257,17 @@ Player.prototype.addListeners = function() {
 				}
 				chargeTime = chargeTime / 500;
 
-				that.changeMovement( "jumping" );
+				that.setMovement( "jumping" );
 				that.jump( chargeTime );
 
 			}
 
+			// double jump
+			if ( down && that.getMovement() === "jumping" ) {
+				console.log( "DOUBLE" )
+				that.setMovement( "double" );
+				that.jumpTween.kill();
+			}
 
 		}
 	}

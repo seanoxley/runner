@@ -79,17 +79,18 @@
 			test.x = Game.width / 2
 			test.y = Game.height / 2
 
-			this.container.addChild( test )
+			// this.container.addChild( test )
 			
 			function createTestSquare() {
 
+				var img = new PIXI.Sprite( Game.GameHandler.Loader.resources[ "paper_flake_32" ].texture );
 
-				var graphics = new PIXI.Graphics();
-				graphics.beginFill(0x00FF00);
-				graphics.drawRect( 0, 0, 100, 100);
-				graphics.endFill()
+				// var graphics = new PIXI.Graphics();
+				// graphics.beginFill(0x00FF00);
+				// graphics.drawRect( 0, 0, 100, 100);
+				// graphics.endFill()
 
-				var img = new PIXI.Sprite(graphics.generateCanvasTexture());
+				// var img = new PIXI.Sprite(graphics.generateCanvasTexture());
 				img.anchor.set( 0.5 )
 
 				return img
@@ -119,31 +120,36 @@ var sprites = new PIXI.particles.ParticleContainer(10000, {
 	uvs: true,
 	alpha: true
 });
-// this.container.addChild(sprites);
+this.container.addChild(sprites);
 
 // create an array to store all the sprites
 this.maggots = [];
 
-var totalSprites = 0;
+var totalSprites = 1000;
 
 for (var i = 0; i < totalSprites; i++)
 {
 	// create a new Sprite
-	var dude = new PIXI.Sprite(  Game.GameHandler.Loader.resources.drop1.texture );
+	// var dude = new PIXI.Sprite(  Game.GameHandler.Loader.resources.drop1.texture );
+	var dude = new PIXI.Sprite( Game.GameHandler.Loader.resources[ "paper_flake_32" ].texture );
 
-	dude.tint = Math.random() * 0xE8D4CD;
+	// dude.tint = Math.random() * 0xE8D4CD;
+
+	dude.scaler = randomFloatFromInterval( 0.2, 0.7 );
+	dude.direction1 = plusOrMinus();
+	dude.direction2 = plusOrMinus();
 
 	// set the anchor point so the texture is centerd on the sprite
 	dude.anchor.set(0.5);
 
 	// different maggots, different sizes
-	dude.scale.set( randomFloatFromInterval( 0.4, 0.8 ) );
+	dude.scale.set( randomFloatFromInterval( 0.1, 0.3 ) );
 
 	// scatter them all
 	dude.x = Math.random() * Game.width;
 	dude.y = Math.random() * Game.height;
 
-	dude.alpha = randomFloatFromInterval( 0.6, 1 );
+	// dude.alpha = randomFloatFromInterval( 0.6, 1 );
 
 	// create a random direction in radians
 	dude.direction = Math.random() * Math.PI * 2;
@@ -154,7 +160,7 @@ for (var i = 0; i < totalSprites; i++)
 	dude.turningSpeed = 0;
 
 	// create a random speed between 0 - 2, and these maggots are slooww
-	dude.speed = 5 + ( 6 * randomFloatFromInterval( 0.2, 0.8 ));
+	dude.speed = 1 + ( 5 * randomFloatFromInterval( 0.01, 0.8 ));
 
 	dude.offset = Math.random() * 100;
 
@@ -172,6 +178,13 @@ this.dudeBounds = new PIXI.Rectangle(-dudeBoundsPadding,
 									Game.height + dudeBoundsPadding * 2);
 
 this.tick = 0;
+
+
+
+
+
+
+
 
 
 			function createBackground( parent, color ) {
@@ -224,11 +237,11 @@ this.tick = 0;
 			this.bg.tilePosition.x -= 1;
 
 			// test.rotation -= 0.02;
-			test.skew.x += 0.005;
-			test.skew.y += 0.01;
- 			test.scale.x = 0.90 + Math.cos(this.tick * 0.5) * 0.10;
- 			test.scale.y = 0.90 + Math.sin(this.tick * 0.5) * 0.10;
- 			test.alpha = 0.5 + Math.cos(this.tick * 0.2) * 0.25;
+			// test.skew.x += 0.005;
+			// test.skew.y += 0.01;
+ 		// 	test.scale.x = 0.90 + Math.cos(this.tick * 0.5) * 0.10;
+ 		// 	test.scale.y = 0.90 + Math.sin(this.tick * 0.5) * 0.10;
+ 		// 	test.alpha = 0.75 + Math.cos(this.tick * 0.2) * 0.25;
 
 			bg1.update();
 			bg2.update();
@@ -238,11 +251,17 @@ this.tick = 0;
 	for (var i = 0; i < this.maggots.length; i++)
 	{
 		var dude = this.maggots[i];
-		dude.scale.y = 0.95 + Math.sin(this.tick + dude.offset) * 0.05;
+
+		dude.rotation += 0.02 * dude.scaler * dude.direction1;
+		// dude.skew.x += 1 * dude.direction1;
+		// dude.skew.y += 1 * dude.direction2;
+		// dude.scale.x = (0.90 + Math.cos(this.tick * 0.5) * 0.10) * dude.scaler;
+		// dude.scale.y = (0.90 + Math.sin(this.tick * 0.5) * 0.10) * dude.scaler;
+		dude.alpha = ( 0.75 + Math.cos(this.tick * 0.2 * dude.scaler) * 0.25 ) * dude.scaler;
+
 		dude.direction += dude.turningSpeed * 0.01;
-		dude.position.x += Math.sin(dude.direction) * (dude.speed * dude.scale.y);
-		dude.position.y += Math.cos(dude.direction) * (dude.speed * dude.scale.y);
-		dude.rotation = -dude.direction + Math.PI;
+		dude.position.x += Math.sin(dude.direction) * dude.speed;
+		dude.position.y += Math.cos(dude.direction) * dude.speed;
 
 		// wrap the maggots
 		if (dude.position.x < this.dudeBounds.x)
