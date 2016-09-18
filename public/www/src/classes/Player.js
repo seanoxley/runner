@@ -12,21 +12,26 @@ function Player() {
 	this.init();
 }
 
-Player.prototype.changeMovement = function( newMovement ) {
+Player.prototype.setMovement = function( newMovement ) {
+	var currentMovement = this.getMovement();
 	if ( this.movementList.indexOf( newMovement ) !== -1 ) {
 		var movementID = this.movementList.indexOf( newMovement );
-		var currentMovement = this.getMovement();
+		var futureMovement = this.movementList[ movementID ];
+
+		if ( !currentMovement ) {
+			currentMovement = "init";
+		}
 
 		if ( newMovement !== currentMovement ) {
-			// console.log( movementID );
-			return this.movement = movementID;
-		}
-	}
+			console.log( "MOVEMENT CHANGE:", currentMovement, "->", futureMovement );
 
-	if ( newMovement >= 0 && newMovement < this.movementList.length && newMovement !== this.movement ) {
-		return this.movement = newMovement;
+			this.play( futureMovement ); // start new movement animation
+			this.movement = movementID; // set new movement via ID
+			return this.getMovement();
+		}
+	} else {
+		return false;
 	}
-	return false;
 }
 
 Player.prototype.getMovement = function( bool ) {
@@ -68,6 +73,13 @@ Player.prototype.create = function() {
 
 /////////////////////////////////////////////////////////////////////////////////
 
+	this.playerAsset = new PIXI.Container();
+	this.addChild( this.playerAsset );
+
+	var playerScale = 5 * Game.scaler;
+
+
+
 	// create an array of textures from an image path
 	var frames = [];
 
@@ -75,46 +87,59 @@ Player.prototype.create = function() {
 	    var val = i < 10 ? '0' + i : i;
 
 	    // magically works since the spritesheet was loaded with the pixi loader
-	    frames.push( PIXI.Texture.fromFrame( 'frame_00' + val + ".png" ));
+	    frames.push( PIXI.Texture.fromFrame( "frame_00" + val + ".png" ));
 	}
 
+	var running = new PIXI.extras.MovieClip( frames );
+	running.name = "running";
+	running.anchor.set(0.5);
+	running.scale.set( playerScale ) ;
+	running.animationSpeed = 0.13;
+	running.visible = false;
 
-	// create a MovieClip (brings back memories from the days of Flash, right ?)
-	movie = new PIXI.extras.MovieClip( frames );
+	var frames = [];
+	frames.push( PIXI.Texture.fromFrame( "frame_0001.png" ));
+	var idle = new PIXI.extras.MovieClip( frames );
+	idle.name = "idle";
+	idle.anchor.set(0.5);
+	idle.scale.set( playerScale ) ;
+	idle.animationSpeed = 0.13;
+	idle.visible = false;
 
-	/*
-	 * A MovieClip inherits all the properties of a PIXI sprite
-	 * so you can change its position, its anchor, mask it, etc
-	 */
+	var frames = [];
+	frames.push( PIXI.Texture.fromFrame( "frame_0001.png" ));
+	var jumping = new PIXI.extras.MovieClip( frames );
+	jumping.name = "jumping";
+	jumping.anchor.set(0.5);
+	jumping.scale.set( playerScale ) ;
+	jumping.animationSpeed = 0.13;
+	jumping.visible = false;
 
-	var playerScale = 5 * Game.scaler;
+	var frames = [];
+	frames.push( PIXI.Texture.fromFrame( "frame_0001.png" ));
+	var falling = new PIXI.extras.MovieClip( frames );
+	falling.name = "falling";
+	falling.anchor.set(0.5);
+	falling.scale.set( playerScale ) ;
+	falling.animationSpeed = 0.13;
+	falling.visible = false;
 
-	movie.position.set( 300 );
+window.man = this;
 
-	movie.anchor.set(0.5);
-	movie.scale.set( playerScale )  
-	movie.animationSpeed = 0.13;
-
-	movie.play();
-
-	// this.addChild(movie);
-	// this.megaman = movie;
+	this.playerAsset.addChild( running );
+	this.playerAsset.addChild( idle );
+	this.playerAsset.addChild( jumping );
+	this.playerAsset.addChild( falling );
 
 
-	window.man = movie
-
-	this.playerAsset = movie;
-	this.hide();
-
-	this.addChild( this.playerAsset );
 
 
 }
 
-Player.prototype.draw = function() {
-	this.visible = true;
-	this.playerAsset.visible = true;
-}
+// Player.prototype.draw = function() {
+// 	this.visible = true;
+// 	this.playerAsset.visible = true;
+// }
 
 Player.prototype.hide = function() {
 	this.visible = false;
@@ -148,10 +173,9 @@ Player.prototype.resetPosition = function() {
 
 Player.prototype.reset = function() {
 	this.status = 0;
-	this.movement = 0;
 	this.resetPosition();
-	this.draw();
 	this.revive();
+	this.setMovement( "idle" );
 }
 
 Player.prototype.init = function() {
@@ -159,25 +183,40 @@ Player.prototype.init = function() {
 	console.log( "New Player" );
 	this.create();
 	this.reset();
+	this.setMovement( "running" );
 	this.addListeners();
 }
 
-// Player.prototype.jump = function() {
-// 	console.log( "JUMP" );
+Player.prototype.play = function( animation ) {
+	if ( animation !== this.getMovement() && animation ) {
+		if ( this.getMovement() ) {
+			this.stop();
+		}
 
-// 	this.playerAsset.y -= this.jumpHeight;
-// }
+		var newAnimation = this.playerAsset.getChildByName( animation );
+		newAnimation.visible = true;
+		newAnimation.play();
+	} else {
+		console.log( "O" )
+		return false;	
+	}
+}
+
+Player.prototype.stop = function() {
+	var child = this.playerAsset.getChildByName( this.getMovement() );
+	child.stop();
+	child.visible = false;
+}
 
 Player.prototype.jump = function( power ) {
 	var that = this;
-
-
 
 	var minJump = 100;
 	var maxJump = 400;
 
 	var minDuration = 0.25;
 	var maxDuration = 0.4;
+	// maxDuration = 4; // debug value
 
 	var duration = ( power * ( maxDuration - minDuration )) + minDuration;
 	var jumpHeight = ( power * ( maxJump - minJump )) + minJump;
@@ -186,7 +225,7 @@ Player.prototype.jump = function( power ) {
 
 	var obj = { y : 0 }
 
-	var tween = TweenMax.to( 
+	this.jumpTween = TweenMax.to( 
 		obj, //target
 		duration, // duration in seconds
 			{ 	y : jumpHeight,
@@ -198,14 +237,17 @@ Player.prototype.jump = function( power ) {
 				onUpdate : function() {
 					var newY = refY( that.defaultPosition.y - obj.y );
 					that.playerAsset.y = newY;
+					if ( this.totalProgress() >= 0.5 ) {
+						that.setMovement( "falling" );
+					}
 				},
 				onComplete : function() {
 					// console.log( "END TWEEN" );
 					that.resetPosition();
-					that.changeMovement( "idle" );
+					that.setMovement( "running" );
 					that.charging = false;
 					// that.buttonHit = false;
-
+					this.kill(); // cleanup tween
 				}
 			}
 		)
@@ -228,31 +270,17 @@ Player.prototype.addListeners = function() {
 			that.currentJumpTime = Date.now();
 			var timeDiff = that.currentJumpTime - that.startJumpTime;
 
-
-
-			// if ( !that.buttonHit ) {
-			// 	console.log( "held" );
-
-			// 			that.buttonHit = true;
-
-
-
-			// }
-
-
-
-			if ( down && !that.charging && that.getMovement() === "idle" ) {
+			// down charge
+			if ( down && !that.charging && that.getMovement() === "running" ) {
 				console.log( "START CHARGE" );
 
 				that.chargeTime = Date.now();
 
 				that.charging = true;
-
-
-
 			}
 
-			if ( !down && that.getMovement() === "idle" && that.charging ) {
+			// first jump
+			if ( !down && that.getMovement() === "running" && that.charging ) {
 
 				var chargeTime =  Date.now() - that.chargeTime;
 
@@ -263,11 +291,17 @@ Player.prototype.addListeners = function() {
 				}
 				chargeTime = chargeTime / 500;
 
-				that.changeMovement( "jumping" );
+				that.setMovement( "jumping" );
 				that.jump( chargeTime );
 
 			}
 
+			// double jump
+			if ( down && that.getMovement() === "jumping" ) {
+				console.log( "DOUBLE" )
+				that.setMovement( "double" );
+				that.jumpTween.kill();
+			}
 
 		}
 	}
