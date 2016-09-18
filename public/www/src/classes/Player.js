@@ -7,7 +7,7 @@ function Player() {
 
 	this.defaultPosition = { x : 200, y : 555 };
 	this.statusList = [ "normal", "invert" ];
-	this.movementList = [ "idle", "running", "jumping", "double", "falling" ];
+	this.movementList = [ "idle", "running", "jumping", "doubling", "falling" ];
 
 	this.init();
 }
@@ -97,7 +97,7 @@ Player.prototype.create = function() {
 	running.animationSpeed = 0.13;
 	running.visible = false;
 
-	var frames = [];
+	frames = [];
 	frames.push( PIXI.Texture.fromFrame( "frame_0001.png" ));
 	var idle = new PIXI.extras.MovieClip( frames );
 	idle.name = "idle";
@@ -106,7 +106,7 @@ Player.prototype.create = function() {
 	idle.animationSpeed = 0.13;
 	idle.visible = false;
 
-	var frames = [];
+	frames = [];
 	frames.push( PIXI.Texture.fromFrame( "frame_0001.png" ));
 	var jumping = new PIXI.extras.MovieClip( frames );
 	jumping.name = "jumping";
@@ -115,7 +115,7 @@ Player.prototype.create = function() {
 	jumping.animationSpeed = 0.13;
 	jumping.visible = false;
 
-	var frames = [];
+	frames = [];
 	frames.push( PIXI.Texture.fromFrame( "frame_0001.png" ));
 	var falling = new PIXI.extras.MovieClip( frames );
 	falling.name = "falling";
@@ -124,13 +124,22 @@ Player.prototype.create = function() {
 	falling.animationSpeed = 0.13;
 	falling.visible = false;
 
+	frames = [];
+	frames.push( PIXI.Texture.fromFrame( "frame_0001.png" ));
+	var doubling = new PIXI.extras.MovieClip( frames );
+	doubling.name = "doubling";
+	doubling.anchor.set(0.5);
+	doubling.scale.set( playerScale ) ;
+	doubling.animationSpeed = 0.13;
+	doubling.visible = false;
+
 window.man = this;
 
 	this.playerAsset.addChild( running );
 	this.playerAsset.addChild( idle );
 	this.playerAsset.addChild( jumping );
 	this.playerAsset.addChild( falling );
-
+	this.playerAsset.addChild( doubling );
 
 
 
@@ -232,8 +241,6 @@ Player.prototype.jump = function( power ) {
 				yoyo : true,
 				repeat : 1,
 				ease: Power1.easeOut, 
-				// 			ease: Power2.easeOut, 
-				// ease : Sine.easeOut,
 				onUpdate : function() {
 					var newY = refY( that.defaultPosition.y - obj.y );
 					that.playerAsset.y = newY;
@@ -246,11 +253,53 @@ Player.prototype.jump = function( power ) {
 					that.resetPosition();
 					that.setMovement( "running" );
 					that.charging = false;
-					// that.buttonHit = false;
 					this.kill(); // cleanup tween
 				}
 			}
 		)
+
+}
+
+Player.prototype.doubleJump = function( durationLeft ) {
+	var that = this;
+	var duration = 0.2;
+	var jumpHeight = 100;
+	var baseY = refY( this.defaultPosition.y );
+	var obj = { y : this.playerAsset.y };
+	var newHeight = obj.y - refY( jumpHeight );
+
+	this.doubleJumpTweenJump = TweenMax.to(
+		obj,
+		duration, {
+			y : newHeight,
+			ease : Power1.easeOut, 
+			onUpdate : function() {
+				that.playerAsset.y = obj.y;
+			},
+			onComplete : function() {
+				this.kill(); // cleanup tween
+				that.doubleJumpTweenFall.play();
+			}
+		}
+	)
+
+	this.doubleJumpTweenFall = TweenMax.to(
+		obj,
+		durationLeft, {
+			y : baseY,
+			ease : Power1.easeIn,
+			paused : true, 
+			onUpdate : function() {
+				that.playerAsset.y = obj.y;
+			},
+			onComplete : function() {
+				this.kill(); // cleanup tween
+				that.resetPosition();
+				that.setMovement( "running" );
+				that.charging = false;
+			}
+		}
+	)
 
 }
 
@@ -275,7 +324,6 @@ Player.prototype.addListeners = function() {
 				console.log( "START CHARGE" );
 
 				that.chargeTime = Date.now();
-
 				that.charging = true;
 			}
 
@@ -298,9 +346,10 @@ Player.prototype.addListeners = function() {
 
 			// double jump
 			if ( down && that.getMovement() === "jumping" ) {
-				console.log( "DOUBLE" )
-				that.setMovement( "double" );
+				var singleJumpDuration = that.jumpTween.totalDuration() / 2;
+				that.setMovement( "doubling" );
 				that.jumpTween.kill();
+				that.doubleJump( singleJumpDuration );
 			}
 
 		}
