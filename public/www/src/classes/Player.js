@@ -13,21 +13,25 @@ function Player() {
 }
 
 Player.prototype.setMovement = function( newMovement ) {
+	var currentMovement = this.getMovement();
 	if ( this.movementList.indexOf( newMovement ) !== -1 ) {
 		var movementID = this.movementList.indexOf( newMovement );
-		var currentMovement = this.getMovement();
+		var futureMovement = this.movementList[ movementID ];
+
+		if ( !currentMovement ) {
+			currentMovement = "init";
+		}
 
 		if ( newMovement !== currentMovement ) {
-			console.log( "MOVEMENT CHANGE:", this.getMovement(), "->", this.movementList[ movementID ] );
-			return this.movement = movementID;
-		}
-	}
+			console.log( "MOVEMENT CHANGE:", currentMovement, "->", futureMovement );
 
-	if ( newMovement >= 0 && newMovement < this.movementList.length && newMovement !== this.movement ) {
-		console.log( "MOVEMENT CHANGE:", this.getMovement(), "->", this.movementList[ movementID ] );
-		return this.movement = newMovement;
+			this.play( futureMovement ); // start new movement animation
+			this.movement = movementID; // set new movement via ID
+			return this.getMovement();
+		}
+	} else {
+		return false;
 	}
-	return false;
 }
 
 Player.prototype.getMovement = function( bool ) {
@@ -86,36 +90,56 @@ Player.prototype.create = function() {
 	    frames.push( PIXI.Texture.fromFrame( "frame_00" + val + ".png" ));
 	}
 
-	var runAnimation = new PIXI.extras.MovieClip( frames );
-	runAnimation.anchor.set(0.5);
-	runAnimation.scale.set( playerScale ) ;
-	runAnimation.animationSpeed = 0.13;
-	runAnimation.visible = false;
+	var running = new PIXI.extras.MovieClip( frames );
+	running.name = "running";
+	running.anchor.set(0.5);
+	running.scale.set( playerScale ) ;
+	running.animationSpeed = 0.13;
+	running.visible = false;
 
 	var frames = [];
 	frames.push( PIXI.Texture.fromFrame( "frame_0001.png" ));
-	var idleAnimation = new PIXI.extras.MovieClip( frames );
-	idleAnimation.anchor.set(0.5);
-	idleAnimation.scale.set( playerScale ) ;
-	idleAnimation.animationSpeed = 0.13;
-	idleAnimation.visible = false;
+	var idle = new PIXI.extras.MovieClip( frames );
+	idle.name = "idle";
+	idle.anchor.set(0.5);
+	idle.scale.set( playerScale ) ;
+	idle.animationSpeed = 0.13;
+	idle.visible = false;
 
+	var frames = [];
+	frames.push( PIXI.Texture.fromFrame( "frame_0001.png" ));
+	var jumping = new PIXI.extras.MovieClip( frames );
+	jumping.name = "jumping";
+	jumping.anchor.set(0.5);
+	jumping.scale.set( playerScale ) ;
+	jumping.animationSpeed = 0.13;
+	jumping.visible = false;
+
+	var frames = [];
+	frames.push( PIXI.Texture.fromFrame( "frame_0001.png" ));
+	var falling = new PIXI.extras.MovieClip( frames );
+	falling.name = "falling";
+	falling.anchor.set(0.5);
+	falling.scale.set( playerScale ) ;
+	falling.animationSpeed = 0.13;
+	falling.visible = false;
 
 window.man = this;
 
-	this.playerAsset.addChild( runAnimation );
-	this.playerAsset.addChild( idleAnimation );
-	// this.hide();
+	this.playerAsset.addChild( running );
+	this.playerAsset.addChild( idle );
+	this.playerAsset.addChild( jumping );
+	this.playerAsset.addChild( falling );
 
 
 
 
 }
 
-Player.prototype.draw = function() {
-	this.visible = true;
-	this.playerAsset.visible = true;
-}
+// Player.prototype.draw = function() {
+// 	this.visible = true;
+// 	this.playerAsset.visible = true;
+// }
 
 Player.prototype.hide = function() {
 	this.visible = false;
@@ -149,10 +173,9 @@ Player.prototype.resetPosition = function() {
 
 Player.prototype.reset = function() {
 	this.status = 0;
-	this.movement = 0;
 	this.resetPosition();
-	this.draw();
 	this.revive();
+	this.setMovement( "idle" );
 }
 
 Player.prototype.init = function() {
@@ -160,17 +183,29 @@ Player.prototype.init = function() {
 	console.log( "New Player" );
 	this.create();
 	this.reset();
+	this.setMovement( "running" );
 	this.addListeners();
 }
 
-Player.prototype.idle = function() {
-	this.setMovement( "idle" );
-	this.playerAsset.idleAnimation.visible = true;
-	this.playerAsset.idleAnimation.play();
+Player.prototype.play = function( animation ) {
+	if ( animation !== this.getMovement() && animation ) {
+		if ( this.getMovement() ) {
+			this.stop();
+		}
+
+		var newAnimation = this.playerAsset.getChildByName( animation );
+		newAnimation.visible = true;
+		newAnimation.play();
+	} else {
+		console.log( "O" )
+		return false;	
+	}
 }
 
-Player.prototype.run = function() {
-	this.setMovement( "jumping" );
+Player.prototype.stop = function() {
+	var child = this.playerAsset.getChildByName( this.getMovement() );
+	child.stop();
+	child.visible = false;
 }
 
 Player.prototype.jump = function( power ) {
@@ -181,8 +216,7 @@ Player.prototype.jump = function( power ) {
 
 	var minDuration = 0.25;
 	var maxDuration = 0.4;
-
-	maxDuration = 4;
+	// maxDuration = 4; // debug value
 
 	var duration = ( power * ( maxDuration - minDuration )) + minDuration;
 	var jumpHeight = ( power * ( maxJump - minJump )) + minJump;
@@ -210,7 +244,7 @@ Player.prototype.jump = function( power ) {
 				onComplete : function() {
 					// console.log( "END TWEEN" );
 					that.resetPosition();
-					that.setMovement( "idle" );
+					that.setMovement( "running" );
 					that.charging = false;
 					// that.buttonHit = false;
 					this.kill(); // cleanup tween
@@ -237,7 +271,7 @@ Player.prototype.addListeners = function() {
 			var timeDiff = that.currentJumpTime - that.startJumpTime;
 
 			// down charge
-			if ( down && !that.charging && that.getMovement() === "idle" ) {
+			if ( down && !that.charging && that.getMovement() === "running" ) {
 				console.log( "START CHARGE" );
 
 				that.chargeTime = Date.now();
@@ -246,7 +280,7 @@ Player.prototype.addListeners = function() {
 			}
 
 			// first jump
-			if ( !down && that.getMovement() === "idle" && that.charging ) {
+			if ( !down && that.getMovement() === "running" && that.charging ) {
 
 				var chargeTime =  Date.now() - that.chargeTime;
 
