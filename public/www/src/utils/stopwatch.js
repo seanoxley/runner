@@ -15,7 +15,7 @@
 //	To reset a paused stopwatch
 //		obj.stop();
 //
-var	clsStopwatch = function() {
+var	StopWatch = function() {
 		// Private vars
 		var	startAt	= 0;	// Time of last start / resume. (0 if not running)
 		var	lapTime	= 0;	// Time on the clock when last stopped in milliseconds
@@ -48,51 +48,51 @@ var	clsStopwatch = function() {
 			};
 	};
 
-var x = new clsStopwatch();
-var $time;
-var clocktimer;
+// var x = new clsStopwatch();
+// var $time;
+// var clocktimer;
 
-function pad(num, size) {
-	var s = "0000" + num;
-	return s.substr(s.length - size);
-}
+// function pad(num, size) {
+// 	var s = "0000" + num;
+// 	return s.substr(s.length - size);
+// }
 
-function formatTime(time) {
-	var h = m = s = ms = 0;
-	var newTime = '';
+// function formatTime(time) {
+// 	var h = m = s = ms = 0;
+// 	var newTime = '';
 
-	h = Math.floor( time / (60 * 60 * 1000) );
-	time = time % (60 * 60 * 1000);
-	m = Math.floor( time / (60 * 1000) );
-	time = time % (60 * 1000);
-	s = Math.floor( time / 1000 );
-	ms = time % 1000;
+// 	h = Math.floor( time / (60 * 60 * 1000) );
+// 	time = time % (60 * 60 * 1000);
+// 	m = Math.floor( time / (60 * 1000) );
+// 	time = time % (60 * 1000);
+// 	s = Math.floor( time / 1000 );
+// 	ms = time % 1000;
 
-	newTime = pad(h, 2) + ':' + pad(m, 2) + ':' + pad(s, 2) + ':' + pad(ms, 3);
-	return newTime;
-}
+// 	newTime = pad(h, 2) + ':' + pad(m, 2) + ':' + pad(s, 2) + ':' + pad(ms, 3);
+// 	return newTime;
+// }
 
-function show() {
-	$time = document.getElementById('time');
-	update();
-}
+// function show() {
+// 	$time = document.getElementById('time');
+// 	update();
+// }
 
-function update() {
-	$time.innerHTML = formatTime(x.time());
-}
+// function update() {
+// 	$time.innerHTML = formatTime(x.time());
+// }
 
-function start() {
-	clocktimer = setInterval("update()", 1);
-	x.start();
-}
+// function start() {
+// 	clocktimer = setInterval("update()", 1);
+// 	x.start();
+// }
 
-function stop() {
-	x.stop();
-	clearInterval(clocktimer);
-}
+// function stop() {
+// 	x.stop();
+// 	clearInterval(clocktimer);
+// }
 
-function reset() {
-	stop();
-	x.reset();
-	update();
-}
+// function reset() {
+// 	stop();
+// 	x.reset();
+// 	update();
+// }

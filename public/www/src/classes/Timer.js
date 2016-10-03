@@ -4,23 +4,29 @@
 
 		this.newTimer = function( initialTime ) {
 			var startTime = initialTime / 1000 || 1; // initialTime is passed in ms so it is divided by 1000 to translate into seconds - default of 1 second for init purposes
-			this.timerObject = { time : initialTime };
+			this.timerObject = { time : 0 };
 
-			var tween = TweenLite.to( 
+			var tween = TweenMax.to( 
 				this.timerObject, //target
-				startTime, // duration
-				{ time : 0, // final value - 0
-					// onUpdate : showScore, // on update callback
+				1, // duration
+				{ 	time : 1,
+					repeat : 2,
+					// onUpdate : onUpdate, // on update callback
 					onComplete : endTween, // on complete callback
+					onRepeat : onRepeat,
 					ease : Linear.easeNone, // no easing
 					paused : true // stops tween from auto playing
 				})
 
 			this.timerObject.tween = tween;
 
+			function onRepeat() {
+				console.log( that.timerObject.time )
+				that.timerObject.time += 1;
+			}
+
 			function endTween() {
 				console.log( "Tween Complete" );
-				Game.GameHandler.LevelHandler.gameOver();
 			}
 		};
 
@@ -33,7 +39,7 @@
 		};
 
 		this.start = function() {
-			if ( !this.timerObject.tween || this.timerObject.time === 0 || this.active ) {
+			if ( !this.timerObject.tween || this.active ) {
 				return false;
 			}
 			this.timerObject.tween.play();

@@ -10,8 +10,8 @@ function ParallaxTerrain( params ) {
 	this.baseColor = params.baseColor || "0x000000";
 	this.baseHeight = params.baseHeight || 0;
 	this.sectionsPerPeak = params.sectionsPerPeak || 2;
-	this.peakVariance = params.peakVariance || 32;
-	this.peakErratic = params.peakErratic || 1;
+	this.peakVariance = ( params.peakVariance !== 0 && params.peakVariance ) ? params.peakVariance : 32;
+	this.peakErratic = ( params.peakErratic !== 0 && params.peakErratic ) ? params.peakErratic : 1;
 
 	// defaults/calculated properties
 	this.minPeak = 1;
@@ -25,6 +25,7 @@ function ParallaxTerrain( params ) {
 	this.color = null;
 	this.running = null;
 	this.speed = null;
+	this.speedScaler = null;
 	this.offSet = null;
 	this.sectionsCreated = null;
 	this.x = null;
@@ -57,11 +58,18 @@ ParallaxTerrain.prototype.stop = function() {
 }
 
 ParallaxTerrain.prototype.setSpeed = function( speed ) {
-	if ( speed ) {
-		if ( speed === 0 ) {
+	if ( speed === 0 ) {
 			this.stop();
-		}
-		this.speed = -speed;
+	}
+	if ( speed ) {
+		this.speed = -speed * this.speedScaler;
+	}
+	return this;
+}
+
+ParallaxTerrain.prototype.setSpeedScaler = function( scaler ) {
+	if ( scaler ) {
+		this.speedScaler = scaler;
 	}
 	return this;
 }
@@ -112,6 +120,7 @@ ParallaxTerrain.prototype.getFirstAnchor = function() {
 ParallaxTerrain.prototype.reset = function() {
 	this.color = this.baseColor;
 	this.speed = 0;
+	this.speedScaler = 0;
 	this.running = false;
 	this.offSet = 0;
 	this.sectionsCreated = 0;
@@ -141,9 +150,6 @@ ParallaxTerrain.prototype.createPiece = function() {
 
 	this.topLeft = ( !this.topLeft ) ? parseInt( randomFloatFromInterval( this.minPeak, this.maxPeak )) : this.topLeft;
 	var topRight = randomIntFromInterval( this.minPeak, this.maxPeak );
-	while ( Math.abs( this.topLeft - topRight ) <= this.peakVariance ) {
-		topRight = parseInt( randomFloatFromInterval( this.minPeak, this.maxPeak ));
-	}
 
 	var graphics = new PIXI.Graphics();
 	graphics.beginFill( this.color );
@@ -179,7 +185,9 @@ ParallaxTerrain.prototype.deletePiece = function() {
 	return false;
 }
 
-ParallaxTerrain.prototype.update = function() {
+ParallaxTerrain.prototype.update = function( gameSpeed ) {
+	this.setSpeed( gameSpeed );
+
 	if ( this.running ) {
 		this.moveX( this.speed );
 	}

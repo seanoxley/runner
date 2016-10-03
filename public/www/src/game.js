@@ -26,6 +26,9 @@
 		// setup gameplay handlers, timers and level builder objects
 		createGameplayHandlers();
 
+		// setup gameplay property object - used to store basic game properties
+		createGameplayProperties();
+
 		// load scenes
 		loadScenes( false );
 
@@ -83,6 +86,10 @@
 
 			Game.GameHandler.Loader = null; // define later on
 			Game.GameHandler.SoundManager = new SoundManager();
+		}
+
+		function createGameplayProperties() {
+			Game.Properties = {};
 		}
 
 		function loadAssets() {
