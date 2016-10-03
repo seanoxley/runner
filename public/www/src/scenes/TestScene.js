@@ -12,6 +12,7 @@
 			this.turnOff(); // turn off scene immediately so it does not start rendering
 
 
+			Game.Properties.gameSpeed = 5;
 
 
 			// scene functions 
@@ -34,7 +35,7 @@
 				baseColor : "0x3E2723",
 				baseHeight : 32,
 				peakVariance : 32,
-				peakErratic : 3,
+				peakErratic : 5,
 				sectionsPerPeak : 2
 			};
 
@@ -51,25 +52,28 @@
 				name : "back",
 				baseColor : "0x795548",
 				baseHeight : 160,
-				peakVariance : 92,
+				peakVariance : 128,
 				peakErratic : 2,
 				sectionsPerPeak : 3
-			};	
+			};
 
 			window.bg3 = new ParallaxTerrain( bg3Data );
-			bg3.setSpeed( 1 ).start();
+			bg3.setSpeedScaler( 0.2 ).start();
 			this.container.addChild( bg3 );
 
 			window.bg2 = new ParallaxTerrain( bg2Data );
-			bg2.setSpeed( 2.5 ).start();
+			bg2.setSpeedScaler( 0.5 ).start();
 			this.container.addChild( bg2 );
 
 			window.bg1 = new ParallaxTerrain( bg1Data );
-			bg1.setSpeed( 5 ).start();
+			bg1.setSpeedScaler( 1 ).start();
 			this.container.addChild( bg1 );
 
 			var foo = new Player();
 			this.container.addChild( foo );
+
+			window.objectSpawner = new ObjectSpawner();
+			this.container.addChild( objectSpawner )
 
 			window.player = foo;
 
@@ -81,6 +85,14 @@
 
 			// this.container.addChild( test )
 			
+
+			// DEBUG UI
+			this.gameTimer = new StopWatch();
+			this.gameTimer.start();
+			createTimerText( this );
+			createGameSpeedText( this );
+
+
 			function createTestSquare() {
 
 				var img = new PIXI.Sprite( Game.GameHandler.Loader.resources[ "paper_flake_32" ].texture );
@@ -143,7 +155,7 @@ for (var i = 0; i < totalSprites; i++)
 	dude.anchor.set(0.5);
 
 	// different maggots, different sizes
-	dude.scale.set( randomFloatFromInterval( 0.1, 0.3 ) );
+	dude.scale.set( randomFloatFromInterval( 0.1, 0.3 ) * Game.scaler );
 
 	// scatter them all
 	dude.x = Math.random() * Game.width;
@@ -157,10 +169,10 @@ for (var i = 0; i < totalSprites; i++)
 
 	// this number will be used to modify the direction of the sprite over time
 	dude.turningSpeed = Math.random() - 0.8;
-	dude.turningSpeed = 0;
+	// dude.turningSpeed = 0;
 
 	// create a random speed between 0 - 2, and these maggots are slooww
-	dude.speed = 1 + ( 5 * randomFloatFromInterval( 0.01, 0.8 ));
+	dude.speed = ( 1 + ( 5 * randomFloatFromInterval( 0.01, 0.8 )) * Game.scaler );
 
 	dude.offset = Math.random() * 100;
 
@@ -228,7 +240,55 @@ this.tick = 0;
 				parent.container.addChild( textObject );
 			}
 
+			function createTimerText( parent) {
+				var style = {
+					// font : 'bold italic 36px Arial',
+					fontFamily : "Arial",
+					fontSize : "36px",
+					fontStyle : "italic",
+					fontWeight : "bold",
+					fill : '#F7EDCA',
+					stroke : '#4a1850',
+					strokeThickness : 5,
+					dropShadow : true,
+					dropShadowColor : '#000000',
+					dropShadowAngle : Math.PI / 6,
+					dropShadowDistance : 6,
+					wordWrap : true,
+					wordWrapWidth : 440
+				};
 
+				var textObject = new PIXI.Text( 0, style );
+				textObject.name = "timerText";
+				textObject.x = Game.width * 0.9;
+				textObject.y = Game.height * 0.02;
+				parent.container.addChild( textObject );
+			}
+
+			function createGameSpeedText( parent) {
+				var style = {
+					// font : 'bold italic 36px Arial',
+					fontFamily : "Arial",
+					fontSize : "36px",
+					fontStyle : "italic",
+					fontWeight : "bold",
+					fill : '#F7EDCA',
+					stroke : '#4a1850',
+					strokeThickness : 5,
+					dropShadow : true,
+					dropShadowColor : '#000000',
+					dropShadowAngle : Math.PI / 6,
+					dropShadowDistance : 6,
+					wordWrap : true,
+					wordWrapWidth : 440
+				};
+
+				var textObject = new PIXI.Text( 0, style );
+				textObject.name = "gameSpeedText";
+				textObject.x = Game.width * 0.9;
+				textObject.y = Game.height * 0.08;
+				parent.container.addChild( textObject );
+			}
 
 			return this;
 		},
@@ -236,16 +296,13 @@ this.tick = 0;
 		update : function() {
 			this.bg.tilePosition.x -= 1;
 
-			// test.rotation -= 0.02;
-			// test.skew.x += 0.005;
-			// test.skew.y += 0.01;
- 		// 	test.scale.x = 0.90 + Math.cos(this.tick * 0.5) * 0.10;
- 		// 	test.scale.y = 0.90 + Math.sin(this.tick * 0.5) * 0.10;
- 		// 	test.alpha = 0.75 + Math.cos(this.tick * 0.2) * 0.25;
+			this.container.getChildByName( "timerText" ).text = this.gameTimer.time();
+			this.container.getChildByName( "gameSpeedText" ).text = Game.Properties.gameSpeed;
 
-			bg1.update();
-			bg2.update();
-			bg3.update();
+			// parallax backgrounds
+			bg1.update( Game.Properties.gameSpeed );
+			bg2.update( Game.Properties.gameSpeed );
+			bg3.update( Game.Properties.gameSpeed );
 
 	// iterate through the sprites and update their position
 	for (var i = 0; i < this.maggots.length; i++)
@@ -259,9 +316,9 @@ this.tick = 0;
 		// dude.scale.y = (0.90 + Math.sin(this.tick * 0.5) * 0.10) * dude.scaler;
 		dude.alpha = ( 0.75 + Math.cos(this.tick * 0.2 * dude.scaler) * 0.25 ) * dude.scaler;
 
-		dude.direction += dude.turningSpeed * 0.01;
-		dude.position.x += Math.sin(dude.direction) * dude.speed;
-		dude.position.y += Math.cos(dude.direction) * dude.speed;
+		// dude.direction += Math.sin( dude.turningSpeed ) * 0.01;
+		dude.position.x += Math.sin( this.tick * dude.direction1 * 0.1 ) * dude.direction * dude.speed;
+		dude.position.y += Math.cos( dude.direction ) * dude.speed;
 
 		// wrap the maggots
 		if (dude.position.x < this.dudeBounds.x)
